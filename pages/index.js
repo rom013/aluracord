@@ -1,35 +1,8 @@
 import {Helmet} from "react-helmet";
 import appConfig from "../config.json"
 import { Box, Button, Text, TextField, Image } from '@skynexui/components';
-
-function GlobalStyle() {
-    return (
-      <style global jsx>{`
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-          list-style: none;
-        }
-        body {
-          font-family: 'Open Sans', sans-serif;
-        }
-        /* App fit Height */ 
-        html, body, #__next {
-          min-height: 100vh;
-          display: flex;
-          flex: 1;
-        }
-        #__next {
-          flex: 1;
-        }
-        #__next > * {
-          flex: 1;
-        }
-        /* ./App fit Height */ 
-      `}</style>
-    );
-}
+import React from 'react'
+import { useRouter } from 'next/router' //hook
 
 function Title(props){
     console.log(props.tag)
@@ -55,19 +28,27 @@ function Title(props){
 }
 
 function HomePage() {
-    // return (
-    // <div>
-    //     
-    //     <GlobalStyle/>
-    //     <Title tag="h1">Boas vindo de volta!</Title>
-    //     <h2>Discord - Alura Matrix</h2>
 
+    const [username, setUsername] = React.useState('rom013')
+    /*
+        React.useState retorna uma array
 
-        
-    // </div>  
-    // )//parenteses usado para quebra de linha
+        username = primeiro valor é uma string (useState = hook) (= valor de saida)
+        setUsername = segundo valor é uma function q altera o array (= valor de entrada)
+    */
 
-    const username = 'Rom013';
+    const [name, setName] = React.useState()
+
+    React.useEffect(()=>{
+        fetch(`https://api.github.com/users/${username}`)
+            .then(function(res){return res.json()})
+            .then(function(resThen){
+                setName(resThen.name)
+        } )
+    })
+
+    const roteamento = useRouter()
+
     return (
         <>
             <Helmet>
@@ -75,7 +56,7 @@ function HomePage() {
                 <title>{appConfig.name}</title>
                 <link rel="shortcut icon" href="https://cdn.discordapp.com/attachments/691421631700271114/935320323379843192/logo-alura.png" />
             </Helmet>
-            <GlobalStyle />
+
             <Box
                 styleSheet={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -120,7 +101,13 @@ function HomePage() {
                         xs: '100%'
                         }
                     }}
-                    tag="form"
+                    as="form"
+
+                    onSubmit={function(infoEvent){
+                        infoEvent.preventDefault()
+                        console.log("click")
+                        roteamento.push('/chat')
+                    }}
                     >
                         <Title>Boas vindas de volta!</Title>
                         <Text
@@ -136,8 +123,14 @@ function HomePage() {
                                 {appConfig.name}
                         </Text>
 
-
                         <TextField
+                            value = {username}
+                            onChange = {function Handler(e){
+                                // Onde está o valor??
+                                const value = e.target.value
+                                // alterar o valor com react
+                                setUsername(value)
+                            }}
                             fullWidth
                             textFieldColors={{
                                 neutral: {
@@ -148,6 +141,18 @@ function HomePage() {
                                 },
                             }}
                         />
+                        
+                        
+                        <Text
+                            styleSheet={{
+                                marginBottom: '10px',
+                                color: appConfig.theme.colors.neutrals["000"],
+                            }}
+                            tag="p"
+                        >
+                            {username.length == 0 ? "O campo de usuario esta vazio" : ''}
+                        </Text>
+
                         <Button
                             type='submit'
                             label='Entrar'
@@ -167,7 +172,7 @@ function HomePage() {
                     styleSheet={{
                         background: appConfig.theme.colors.neutrals[800],
                         border: '1px solid',
-                        borderColor: appConfig.theme.colors.neutrals[999],
+                        borderColor: "#4EA8DE",
                         borderRadius: '10px',
                         color: appConfig.theme.colors.neutrals['000'],
                         display: {
@@ -180,11 +185,12 @@ function HomePage() {
                         maxWidth: '200px',
                         minHeight: '240px',
                         padding: '16px 26px',
-                        flex: 1
+                        flex: 1,
+                        boxShadow: '0 0 2px #fff, 0 0 5px #4EA8DE, 0 0 5px #4EA8DE, 0 0 5px #4EA8DE'
                     }}
                 >
                     <Image
-                        src="https://avatars.githubusercontent.com/u/81822722?v=4"
+                        src={`https://github.com/${username}.png`}
                         styleSheet={{
                             borderRadius: '50%',
                             marginBottom: '32px'
@@ -199,10 +205,25 @@ function HomePage() {
                             fontWeight: 700,
                             padding: '3px 10px'
                         }}
-                        tag="h2"
+                        tag="span"
                         variant="body4"
                     >
                         {username}
+                    </Text>
+                    <Text
+                        styleSheet={{
+                            backgroundColor: appConfig.theme.colors.neutrals[999],
+                            borderRadius: '1000px',
+                            color: appConfig.theme.colors.neutrals['000'],
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            padding: '3px 10px',
+                            marginTop: "10px"
+                        }}
+                        tag="span"
+                        variant="body4"
+                    >
+                        {name}
                     </Text>
                 </Box>
                 
