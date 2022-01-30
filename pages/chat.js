@@ -156,7 +156,7 @@ export default function ChatPage() {
                                     color: appConfig.theme.colors.neutrals[200],
                                 }}
                             />
-                            {/* <Button 
+                            <Button 
                                 buttonColors={{
                                     contrastColor: appConfig.theme.colors.neutrals["000"],
                                     mainColor: appConfig.theme.colors.primary[500],
@@ -164,7 +164,11 @@ export default function ChatPage() {
                                     mainColorStrong: appConfig.theme.colors.primary[700]
                                 }}
                                 styleSheet={{
-                                    height: "100%"
+                                    height: "100%",
+                                    display: {
+                                        sm: "none",
+                                        xs: "flex"  
+                                    }
                                 }}
                                 iconName="arrowRight" 
 
@@ -174,7 +178,7 @@ export default function ChatPage() {
                                     }
                                     
                                 }}
-                            /> */}
+                            />
 
                             {/* CallBack */}
                             <ButtonSendSticker

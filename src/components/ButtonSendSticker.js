@@ -20,7 +20,11 @@ export function ButtonSendSticker(props) {
             fontSize: '20px',
             marginBottom: '8px',
             lineHeight: '0',
-            display: 'flex',
+            display: {
+              sm: "flex",
+              xs: "none",
+              
+            },
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: appConfig.theme.colors.neutrals[300],
