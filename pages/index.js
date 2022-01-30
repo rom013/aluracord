@@ -27,9 +27,10 @@ function Title(props){
     )
 }
 
-function HomePage() {
-
+export default function HomePage() {
+    
     const [username, setUsername] = React.useState('rom013')
+    
     /*
         React.useState retorna uma array
 
@@ -49,6 +50,7 @@ function HomePage() {
 
     const roteamento = useRouter()
 
+   
     return (
         <>
             <Helmet>
@@ -105,8 +107,8 @@ function HomePage() {
 
                     onSubmit={function(infoEvent){
                         infoEvent.preventDefault()
-                        console.log("click")
-                        roteamento.push('/chat')
+                        
+                        roteamento.push(`/chat?username=${username}`)
                     }}
                     >
                         <Title>Boas vindas de volta!</Title>
@@ -233,6 +235,6 @@ function HomePage() {
             </Box>
         </>
     )
-  }
-  
-  export default HomePage
+}
+
+//export default HomePage

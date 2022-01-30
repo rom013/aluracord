@@ -1,106 +1,193 @@
-import { Box, Text, TextField, Image, Button } from '@skynexui/components';
+//https://github.com/supabase/supabase-js
+
+import {Helmet} from "react-helmet";
+import { Box, Text, TextField, Image, Button, Icon } from '@skynexui/components';
 import React from 'react';
 import appConfig from '../config.json';
+import { createClient } from '@supabase/supabase-js';
+import { useRouter } from 'next/router'
+import { ButtonSendSticker } from "../src/components/ButtonSendSticker";
+
+
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzMzNDA5MCwiZXhwIjoxOTU4OTEwMDkwfQ.sQ38gxReoWChyVEvJF291dNEfeXB5v8CRvU14P5i51Y"
+const SUPABASE_URL = "https://lvuwmzfcykkzjgxdwent.supabase.co"
+const supabesClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+//ativar o real time do supabase
+function escutaMensagem(addMsg){
+    return supabesClient
+        .from('mensagens')
+        .on('INSERT', (resLive)=>{
+            // console.log("houve uma nova mensagem", resLive.new)
+            addMsg(resLive.new)
+        })
+        .subscribe()
+}
 
 export default function ChatPage() {
     // Sua lógica vai aqui
     const [mensagem, setMensagem] = React.useState('')
-
     const [msgList, setMsgList] = React.useState([])
+    const [loading, setLoading] = React.useState(true)
 
+
+    const roteamento = useRouter()
+    const usuarioLogado = roteamento.query.username
+
+// So chama este useEffect na primeira vez que a pagina carrega
+    
+    React.useEffect(()=>{
+        supabesClient
+            .from('mensagens')
+            .select('*')
+            .order('id', {ascending: false})
+            .then(({ data, status })=>{
+                console.log(data, status)
+                setLoading(false)
+                setMsgList(data)
+            })
+            escutaMensagem((novaMsg)=>{
+                console.log(novaMsg)
+                setMsgList((valorAtual)=>{
+                    return [
+                        novaMsg,
+                        ...valorAtual
+                    ]
+                })
+            })
+    }, [])
 
     function hendleNewMsg(msgTextfield){
         const msg = {
-            by: "Rom013",
-            id: msgList.length,
-            text: msgTextfield
+            by: usuarioLogado,
+            text: msgTextfield,
+            data: new Date()
         }
-        setMsgList([
-            ...msgList,
-            msg
-        ])
+
+        supabesClient
+            .from('mensagens')
+            .insert(msg)
+            .then(({ data })=>{
+                console.log("a")
+            })
         setMensagem('')
     }
     // ./Sua lógica vai aqui
     return (
-        
-        <Box
-            styleSheet={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                backgroundColor: appConfig.theme.colors.primary[500],
-                backgroundImage: `url(https://images.hdqwalls.com/download/astronaut-in-crypto-city-5k-k0-1600x900.jpg)`,
-                backgroundRepeat: 'no-repeat', backgroundSize: 'cover',
-                color: appConfig.theme.colors.neutrals['000']
-            }}
-        >
+        <>
+            <Helmet>
+                    <meta charSet="utf-8" />
+                    <title>Aluracord - chat</title>
+                    <link rel="shortcut icon" href="https://cdn.discordapp.com/attachments/691421631700271114/935320323379843192/logo-alura.png" />
+            </Helmet>
             <Box
                 styleSheet={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    flex: 1,
-                    boxShadow: '0 2px 10px 0 rgb(0 0 0 / 20%)',
-                    borderRadius: '5px',
-                    backgroundColor: appConfig.theme.colors.neutrals[700],
-                    height: '100%',
-                    maxWidth: '95%',
-                    maxHeight: '95vh',
-                    padding: '32px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: appConfig.theme.colors.primary[500],
+                    backgroundImage: `url(https://images.hdqwalls.com/download/astronaut-in-crypto-city-5k-k0-1600x900.jpg)`,
+                    backgroundRepeat: 'no-repeat', backgroundSize: 'cover',
+                    color: appConfig.theme.colors.neutrals['000']
                 }}
             >
-                <Header />
                 <Box
                     styleSheet={{
-                        position: 'relative',
                         display: 'flex',
-                        flex: 1,
-                        height: '80%',
-                        backgroundColor: appConfig.theme.colors.neutrals[600],
                         flexDirection: 'column',
+                        flex: 1,
+                        boxShadow: '0 2px 10px 0 rgb(0 0 0 / 20%)',
                         borderRadius: '5px',
-                        padding: '16px',
-                        
+                        backgroundColor: appConfig.theme.colors.neutrals[700],
+                        height: '100%',
+                        maxWidth: '95%',
+                        maxHeight: '95vh',
+                        padding: '32px',
                     }}
                 >
-
-                    <MessageList mensagens={msgList} />
-                    
-                    {/* {mensagem} */}
+                    <Header />
                     <Box
-                        as="form"
                         styleSheet={{
+                            position: 'relative',
                             display: 'flex',
-                            alignItems: 'center',
+                            flex: 1,
+                            height: '80%',
+                            backgroundColor: appConfig.theme.colors.neutrals[600],
+                            flexDirection: 'column',
+                            borderRadius: '5px',
+                            padding: '16px',
+                            
                         }}
                     >
-                        <TextField
-                            value = {mensagem}
-                            onChange={function (event){
-                                setMensagem(event.target.value)
-                            }}
-                            onKeyPress={function(event){
-                                // console.log(event)
-                                if(event.code == "Enter"){
-                                    event.preventDefault()
-                                    hendleNewMsg(mensagem)
-                                }
-                            }}
-                            placeholder="Insira sua mensagem aqui..."
-                            type="textarea"
+                        {loading ? <Loading/> : <MessageList mensagens={msgList} />}
+                        
+                        
+                        {/* {mensagem} */}
+                        <Box
+                            as="form"
                             styleSheet={{
-                                width: '100%',
-                                border: '0',
-                                resize: 'none',
-                                borderRadius: '5px',
-                                padding: '6px 8px',
-                                backgroundColor: appConfig.theme.colors.neutrals[800],
-                                marginRight: '12px',
-                                color: appConfig.theme.colors.neutrals[200],
+                                display: 'flex',
+                                alignItems: 'center',
                             }}
-                        />
+                        >
+                            <TextField
+                                value = {mensagem}
+                                onChange={function (event){
+                                    setMensagem(event.target.value)
+                                }}
+                                onKeyPress={function(event){
+                                    // console.log(event)
+                                    if(event.code == "Enter"){
+                                        event.preventDefault()
+                                        if(mensagem.length >= 1){
+                                            event.preventDefault()
+                                            hendleNewMsg(mensagem)
+                                        }
+                                    }
+                                }}
+                                placeholder="Insira sua mensagem aqui..."
+                                type="textarea"
+                                styleSheet={{
+                                    width: '100%',
+                                    border: '0',
+                                    resize: 'none',
+                                    borderRadius: '5px',
+                                    padding: '6px 8px',
+                                    backgroundColor: appConfig.theme.colors.neutrals[800],
+                                    marginRight: '12px',
+                                    color: appConfig.theme.colors.neutrals[200],
+                                }}
+                            />
+                            {/* <Button 
+                                buttonColors={{
+                                    contrastColor: appConfig.theme.colors.neutrals["000"],
+                                    mainColor: appConfig.theme.colors.primary[500],
+                                    mainColorLight: appConfig.theme.colors.primary[600],
+                                    mainColorStrong: appConfig.theme.colors.primary[700]
+                                }}
+                                styleSheet={{
+                                    height: "100%"
+                                }}
+                                iconName="arrowRight" 
+
+                                onClick={()=>{
+                                    if(mensagem.length >= 1){
+                                        hendleNewMsg(mensagem)
+                                    }
+                                    
+                                }}
+                            /> */}
+
+                            {/* CallBack */}
+                            <ButtonSendSticker
+                                onStickerClick={(sticker)=>{
+                                    console.log("enviar pro banco")
+                                    hendleNewMsg(`:sticker: ${sticker}`)
+                                }}
+                            />
+                        </Box>
                     </Box>
                 </Box>
             </Box>
-        </Box>
+        </>
     )
 }
 
@@ -112,6 +199,8 @@ function Header() {
                     Chat
                 </Text>
                 <Button
+
+                    as="form"
                     variant='tertiary'
                     colorVariant='neutral'
                     label='Logout'
@@ -121,20 +210,82 @@ function Header() {
         </>
     )
 }
-
+function Loading(){
+    return(
+        <Box
+            styleSheet={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                flexDirection: 'column',
+                width: '100%',
+                height: '100%',
+                color: "#fff"
+            }}
+        >
+            <Box
+                tag='spam'
+                styleSheet={{
+                    width: '100%',
+                    height: '50px',
+                    borderRadius: '5px',
+                    marginBottom: '16px',
+                    backgroundColor: appConfig.theme.colors.neutrals[700],
+                    animation: "cor 1s linear infinite alternate-reverse",
+                    animationDelay: '.8s'
+                }}
+            />
+            <Box
+                tag='spam'
+                styleSheet={{
+                    width: '100%',
+                    height: '50px',
+                    borderRadius: '5px',
+                    marginBottom: '16px',
+                    backgroundColor: appConfig.theme.colors.neutrals[700],
+                    animation: "cor 1s linear infinite alternate-reverse",
+                    animationDelay: '.2s'
+                }}
+            />
+            <Box
+                tag='spam'
+                styleSheet={{
+                    width: '100%',
+                    height: '50px',
+                    borderRadius: '5px',
+                    marginBottom: '16px',
+                    backgroundColor: appConfig.theme.colors.neutrals[700],
+                    animation: "cor 1s linear infinite alternate-reverse",
+                    animationDelay: '1s'
+                }}
+            />
+            <Box
+                tag='spam'
+                styleSheet={{
+                    width: '100%',
+                    height: '50px',
+                    borderRadius: '5px',
+                    marginBottom: '16px',
+                    backgroundColor: appConfig.theme.colors.neutrals[700],
+                    animation: "cor 1s linear infinite alternate-reverse",
+                    animationDelay: '.5s'
+                }}
+            />
+        </Box>
+    )
+}
 function MessageList(props) {
-    console.log(props.mens);
+    //console.log(props.mensagens);
+    
     return (
         <Box
             tag="ul"
             styleSheet={{
-                overflow: 'scroll',
                 display: 'flex',
                 flexDirection: 'column-reverse',
                 flex: 1,
-                color: appConfig.theme.colors.neutrals["000"],
+                //color: appConfig.theme.colors.neutrals["000"],
                 marginBottom: '16px',
-                overflow: 'auto'
+                overflow: 'auto',
             }}
         >
             {props.mensagens.map((mensagens)=>{
@@ -164,7 +315,7 @@ function MessageList(props) {
                                     display: 'inline-block',
                                     marginRight: '8px',
                                 }}
-                                src={`https://github.com/rom013.png`}
+                                src={`https://github.com/${mensagens.by}.png`}
                             />
                             <Text tag="strong">
                                 {mensagens.by}
@@ -177,10 +328,14 @@ function MessageList(props) {
                                 }}
                                 tag="span"
                             >
-                                {(new Date().toLocaleDateString())}
+                                {mensagens.data}
+                                {/* {(new Date().toLocaleDateString())} */}
                             </Text>
                         </Box>
-                       {mensagens.text}
+                        {}
+                        {/* {mensagens.text.startsWith(':sticker:').toString()} */}
+                       {mensagens.text.startsWith(':sticker:') ? <Image src={mensagens.text.replace(':sticker:', '')}/> : mensagens.text}
+
                     </Text>
                 )
             })}
@@ -188,6 +343,20 @@ function MessageList(props) {
     )
 }
 
-/* onChange - evento que executa quando há alguma alteração
+
+
+
+
+/* 
+    /==================================================\
+
+    onChange - evento que executa quando há alguma alteração
     onChange={(event)=>{}}
+
+
+    ***Operador ternario***
+
+    var verdade = false
+    verdade ? console.log("verdade") : console.log("falso")
+    //falso
 */

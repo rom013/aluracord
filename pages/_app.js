@@ -25,6 +25,11 @@ function GlobalStyle() {
           flex: 1;
         }
         /* ./App fit Height */ 
+
+        @keyframes cor{
+          0%{opacity: 0;}
+          100%{opacity: 1;}
+        }
       `}</style>
     );
 }
